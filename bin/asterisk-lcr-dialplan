@@ -1,0 +1,120 @@
+#!/usr/bin/perl
+use lib qw (. .. ./lib);
+use warnings;
+use strict;
+
+
+sub _process
+{
+    my $self  = shift;
+    my $num   = shift || return;
+    my @rates = $self->rates ($num);
+
+    my ($str, $res);
+    foreach my $rate (@rates)
+    {
+        $str = $self->dial_string ($num, $rate) || next;
+        $res = $self->dial ($str);
+        $res =~ /CHANUNAVAIL|CONGESTION/ ? next : last;
+    }
+
+    $res ||= 'CHANUNAVAIL';
+    return $res;
+}
+
+
+package AGI::Fake;
+
+sub new
+{
+    my $class = shift;
+    return bless { @_ }, $class;
+}
+
+
+sub get_variable
+{
+    my $self = shift;
+    my $var  = shift;
+    return $self->{$var};
+}
+
+
+package main;
+use FreezeThaw qw(freeze thaw cmpStr safeFreeze cmpStrHard);
+use Asterisk::LCR::Importer::CanonicalCSV;
+use Asterisk::LCR::Rate;
+use Config::Mini;
+
+
+$SIG{__WARN__} = sub { $_[0] !~ /Can't locate AGI\/Fake\.pm/ and warn @_ };
+
+@ARGV || die "Usage: $0 <config_file>";
+Config::Mini::parse_file (@ARGV);
+
+my $SORT = Config::Mini::instantiate ("comparer") || Asterisk::LCR::Comparer::Dummy->new();
+our @IMPORTERS =  map { -e $_->target() ? Asterisk::LCR::Importer::CanonicalCSV->new (
+                                              %{$_},
+                                              provider => $_->provider(),
+                                              file => $_->target()
+                                          ) : $_
+                  } Config::Mini::select ('^import:');
+
+$| = 1;
+
+my %PREFIXES = ();
+my %fake_agi_args = ();
+
+foreach my $imp ( @IMPORTERS )
+{
+    my $new_rates = $imp->rates();
+    for my $prefix ( keys %{$new_rates} ) { $PREFIXES{$prefix} = 1 }
+    
+    my $prv = $imp->provider();
+    my $key = 'ASTERISK_LCR_TMPL_' . uc ($prv);
+    $fake_agi_args{$key} = [ $imp->{dial} ];
+}
+
+$Config::Mini::CONF{"agi"} = {
+    package => [ "AGI::Fake" ],
+    %fake_agi_args,
+};
+
+$Config::Mini::CONF{"dialer"}->{"lcr"} ||= [ "lcr_db" ];
+$Config::Mini::CONF{"dialer"}->{"agi"} ||= [ Config::Mini::instantiate ("agi") ];
+
+
+my @out;
+my $dialer = Config::Mini::instantiate ("dialer") || die "dialer object not defined";
+foreach my $prefix (keys %PREFIXES)
+{
+     my @dial_string  = @{$dialer->_process ($prefix)};
+     my $count  = 1;
+     foreach my $dial_string (@dial_string)
+     {
+         my $local_prefix = $dialer->locale() ? $dialer->locale()->global_to_local ($prefix) : $prefix;
+         push @out, "_$local_prefix" . "X. => s,$count,Dial($dial_string)";
+         $count++;
+     }
+}
+
+print join "\n", sort { _sort_line ($b, $a) } @out;
+print "\n";
+
+
+sub _sort_line
+{
+    my $line1 = shift;
+    my $line2 = shift;
+    my ($prefix1) = $line1 =~ /^_(.*?)X/;
+    my ($prefix2) = $line2 =~ /^_(.*?)X/;
+    return 0  if (length ($prefix1) == length ($prefix2));
+    return -1 if (length ($prefix1) < length ($prefix2));
+    return +1 if (length ($prefix1) > length ($prefix2));
+}
+
+
+1;
+
+
+__END__

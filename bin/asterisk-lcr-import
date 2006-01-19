@@ -1,0 +1,43 @@
+#!/usr/bin/perl
+use lib qw (. .. ./lib);
+use Config::Mini;
+use warnings;
+use strict;
+
+@ARGV || die "Usage: $0 <config_file>";
+Config::Mini::parse_file (@ARGV);
+
+for (Config::Mini::select ('^import:')) { write_rates ( $_ ) }
+
+sub write_rates
+{
+    my $obj    = shift;
+    my $target = $obj->target();
+
+    print "Fetching $target...\n";
+    my $rates  = $obj->rates();
+
+    print "Writing $target...\n";
+    open FP, ">$target" or die "Cannot write-open $target";
+    print FP "prefix,label,provider,currency,rate,connection_fee,first_increment,increment\n";
+    for ( keys %{$rates} )
+    {
+        $_ = $rates->{$_};
+        my $prefix          = $_->prefix();
+        my $label           = $_->label();
+        my $provider        = $_->provider();
+        my $connection_fee  = $_->connection_fee();
+        my $first_increment = $_->first_increment();
+        my $increment       = $_->increment();
+        my $rate            = $_->rate();
+        my $currency        = $_->currency();
+        print FP "$prefix,$label,$provider,$currency,$rate,$connection_fee,$first_increment,$increment\n";
+    }
+    close FP;
+}
+
+
+1;
+
+
+__END__
