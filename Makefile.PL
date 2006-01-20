@@ -4,9 +4,11 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'		=> 'Asterisk::LCR',
     'VERSION_FROM'	=> 'lib/Asterisk/LCR.pm', # finds $VERSION
+    'EXE_FILES'         => [ qw (bin/asterisk-lcr-build bin/asterisk-lcr-dialplan bin/asterisk-lcr-import) ],
     'PREREQ_PM'		=> {
 	'Config::Mini'  => '0.01',
         'FreezeThaw'    => '0.43',
+        'Finance::Currency::Convert::XE' => '0.10',
     },
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'lib/Asterisk/LCR.pm',
