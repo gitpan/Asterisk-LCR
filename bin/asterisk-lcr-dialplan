@@ -65,15 +65,31 @@ $| = 1;
 my %PREFIXES = ();
 my %fake_agi_args = ();
 
+my $locale = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
 foreach my $imp ( @IMPORTERS )
 {
-    my $new_rates = $imp->rates();
-    for my $prefix ( keys %{$new_rates} ) { $PREFIXES{$prefix} = 1 }
-    
+    print STDERR "Importing rates: " . $imp->{target} || $imp->{file};
+    print STDERR "\n";
+    foreach my $prfx (keys %{$imp->rates()})
+    {
+        my $fix_prfx = $locale->local_to_global ($locale->global_to_local ($prfx));
+        $PREFIXES{$fix_prfx} = 1;
+    }
+
     my $prv = $imp->provider();
     my $key = 'ASTERISK_LCR_TMPL_' . uc ($prv);
     $fake_agi_args{$key} = [ $imp->{dial} ];
 }
+
+#foreach my $imp ( @IMPORTERS )
+#{
+#    my $new_rates = $imp->rates();
+#    for my $prefix ( keys %{$new_rates} ) { $PREFIXES{$prefix} = 1 }
+#    
+#    my $prv = $imp->provider();
+#    my $key = 'ASTERISK_LCR_TMPL_' . uc ($prv);
+#    $fake_agi_args{$key} = [ $imp->{dial} ];
+#}
 
 $Config::Mini::CONF{"agi"} = {
     package => [ "AGI::Fake" ],
@@ -93,7 +109,7 @@ foreach my $prefix (keys %PREFIXES)
      foreach my $dial_string (@dial_string)
      {
          my $local_prefix = $dialer->locale() ? $dialer->locale()->global_to_local ($prefix) : $prefix;
-         push @out, "_$local_prefix" . "X. => s,$count,Dial($dial_string)";
+         push @out, "exten => _$local_prefix". "X.,$count,Dial($dial_string)";
          $count++;
      }
 }
@@ -106,8 +122,8 @@ sub _sort_line
 {
     my $line1 = shift;
     my $line2 = shift;
-    my ($prefix1) = $line1 =~ /^_(.*?)X/;
-    my ($prefix2) = $line2 =~ /^_(.*?)X/;
+    my ($prefix1) = $line1 =~ /_(.*?)X/;
+    my ($prefix2) = $line2 =~ /_(.*?)X/;
     return 0  if (length ($prefix1) == length ($prefix2));
     return -1 if (length ($prefix1) < length ($prefix2));
     return +1 if (length ($prefix1) > length ($prefix2));

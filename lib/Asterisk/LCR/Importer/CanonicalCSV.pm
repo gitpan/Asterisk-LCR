@@ -13,6 +13,7 @@ Asterisk::LCR::Importer::CanonicalCSV
 package Asterisk::LCR::Importer::CanonicalCSV;
 use base qw /Asterisk::LCR::Importer/;
 use Asterisk::LCR::Rate;
+use Asterisk::LCR::Locale;
 use warnings;
 use strict;
 

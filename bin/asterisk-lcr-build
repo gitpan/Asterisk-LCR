@@ -3,6 +3,7 @@ use lib qw (. .. ./lib);
 use FreezeThaw qw(freeze thaw cmpStr safeFreeze cmpStrHard);
 use Asterisk::LCR::Importer::CanonicalCSV;
 use Asterisk::LCR::Comparer::Dummy;
+use Asterisk::LCR::Locale;
 use Config::Mini;
 use warnings;
 use strict;
@@ -22,12 +23,16 @@ $| = 1;
 
 
 my %prefixes = ();
+my $locale   = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
 foreach my $imp ( @IMPORTERS )
 {
     print "Importing rates: " . $imp->{target} || $imp->{file};
     print "\n";
-    my $new_rates = $imp->rates();
-    %prefixes = ( %prefixes, map { $_ => 1 } keys %{$new_rates} ) ;
+    foreach my $prfx (keys %{$imp->rates()})
+    {
+        my $fix_prfx = $locale->local_to_global ($locale->global_to_local ($prfx));
+        $prefixes{$fix_prfx} = 1;
+    }
 }
 
 

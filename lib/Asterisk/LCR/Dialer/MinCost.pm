@@ -9,16 +9,16 @@ sub _process
     my $self   = shift;
     my $prefix = shift || return;
     my @rates  = $self->rates ($prefix);
-    my ($str, $res);
+    @rates || return [];
 
     my $local_prefix = $self->locale() ? $self->locale()->global_to_local ($prefix) : $prefix;
     my $exten_remove = length ($local_prefix);
     
     $prefix = "$prefix\${EXTEN:$exten_remove}";
+    my $res ||= [];
     foreach my $rate (@rates)
     {
-        $str = $self->dial_string ($prefix, $rate) || next;
-        $res ||= [];
+        my $str = $self->dial_string ($prefix, $rate) || next;
         push @{$res}, $str;
     }
     

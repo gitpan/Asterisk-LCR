@@ -1,0 +1,13 @@
+- 0.05
+  - Tweaked fr.txt translation table
+  - Fixed prefix normalization in asterisk-lcr-(builder|dialplan)
+  - Fixed some documentation bugs
+  - Fixed asterisk-dialplan broken output
+
+- 0.04
+  - Fixed missing makefile exe_files parameter
+  - Added Finance::Currency::Convert::XE dependency
+
+- 0.03
+  - CPAN release of re-write
+  - "initial" public release

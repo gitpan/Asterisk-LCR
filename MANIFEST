@@ -1,6 +1,7 @@
 bin/asterisk-lcr-build
 bin/asterisk-lcr-dialplan
 bin/asterisk-lcr-import
+Changes
 lib/Asterisk/LCR.pm
 lib/Asterisk/LCR/Comparer.pm
 lib/Asterisk/LCR/Comparer/Dummy.pm
@@ -15,6 +16,7 @@ lib/Asterisk/LCR/Importer/NuFone.pm
 lib/Asterisk/LCR/Importer/PlainVoip.pm
 lib/Asterisk/LCR/Importer/VoIPJet.pm
 lib/Asterisk/LCR/Locale.pm
+lib/Asterisk/LCR/Locale/be.txt
 lib/Asterisk/LCR/Locale/fix_intl.txt
 lib/Asterisk/LCR/Locale/fr.txt
 lib/Asterisk/LCR/Locale/us.txt
@@ -23,5 +25,6 @@ lib/Asterisk/LCR/Rate.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
+META.yml			Module meta-data (added by MakeMaker)
 README
-META.yml                                 Module meta-data (added by MakeMaker)
+t/001_locale.t

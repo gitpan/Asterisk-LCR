@@ -2,7 +2,7 @@ package Asterisk::LCR;
 use warnings;
 use strict;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 1;
 
@@ -33,7 +33,7 @@ Once Asterisk::LCR is installed, you need to write a configuration file.
   
   [dialer]
   package  = Asterisk::LCR::Dialer::MinCost
-  locale   = eu
+  locale   = fr 
   
   [import:voipjet]
   package  = Asterisk::LCR::Importer::VoIPJet
