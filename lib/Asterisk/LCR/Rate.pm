@@ -295,7 +295,7 @@ sub validate_connection_fee
     };
     
     is_number ($val) or do { 
-        die 'asterisk/lcr/rate/connection_fee/not_a_number';
+        die "asterisk/lcr/rate/connection_fee/not_a_number : $val";
 	return 0;
     };
 
@@ -621,7 +621,7 @@ Returns the current object's 'label' attribute.
 sub label
 {
     my $self = shift;
-    return $self->{label};
+    return $self->{label} || '?';
 }
 
 

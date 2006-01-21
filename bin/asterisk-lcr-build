@@ -12,12 +12,7 @@ use strict;
 Config::Mini::parse_file (@ARGV);
 
 my $SORT = Config::Mini::instantiate ("comparer") || Asterisk::LCR::Comparer::Dummy->new();
-our @IMPORTERS =  map { !$_->isa ("Asterisk::LCR::Importer::CanonicalCSV") ? Asterisk::LCR::Importer::CanonicalCSV->new (
-                                              %{$_},
-                                              provider => $_->provider(),
-                                              file => $_->target()
-                                          ) : $_
-                  } Config::Mini::select ('^import:');
+our @IMPORTERS =  map { Asterisk::LCR::Importer::CanonicalCSV->new ( %{$_} ) } Config::Mini::select ('^import:');
 
 $| = 1;
 
@@ -26,7 +21,7 @@ my %prefixes = ();
 my $locale   = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
 foreach my $imp ( @IMPORTERS )
 {
-    print "Importing rates: " . $imp->{target} || $imp->{file};
+    print "Importing rates: " . $imp->target();
     print "\n";
     foreach my $prfx (keys %{$imp->rates()})
     {

@@ -13,7 +13,6 @@ sub write_rates
 {
     my $obj    = shift;
     my $target = $obj->target();
-
     print "Fetching $target...\n";
     my $rates  = $obj->rates();
 

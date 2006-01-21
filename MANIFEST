@@ -14,6 +14,7 @@ lib/Asterisk/LCR/Importer.pm
 lib/Asterisk/LCR/Importer/CanonicalCSV.pm
 lib/Asterisk/LCR/Importer/NuFone.pm
 lib/Asterisk/LCR/Importer/PlainVoip.pm
+lib/Asterisk/LCR/Importer/RichMedium.pm
 lib/Asterisk/LCR/Importer/VoIPJet.pm
 lib/Asterisk/LCR/Locale.pm
 lib/Asterisk/LCR/Locale/be.txt

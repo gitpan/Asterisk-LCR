@@ -1,13 +1,18 @@
-- 0.05
+- 0.06 (2006-01-21)
+  - Re-wrote and cleaned up CSV import scripts
+  - Fixed target() method
+  - Added richmedia import
+
+- 0.05 (2006-01-20)
   - Tweaked fr.txt translation table
   - Fixed prefix normalization in asterisk-lcr-(builder|dialplan)
   - Fixed some documentation bugs
   - Fixed asterisk-dialplan broken output
 
-- 0.04
+- 0.04 (2006-01-20)
   - Fixed missing makefile exe_files parameter
   - Added Finance::Currency::Convert::XE dependency
 
-- 0.03
+- 0.03 (2006-01-19)
   - CPAN release of re-write
   - "initial" public release

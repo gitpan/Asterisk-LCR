@@ -22,11 +22,7 @@ sub validate
 {
     my $self = shift;
     
-    my $file = $self->file() || $self->{target} or do {
-        die 'asterisk/lcr/importer/canonicalcsv/file/undefined';
-        return 0;
-    };
-    
+    my $file = $self->target();
     -f $file or do {
         die 'asterisk/lcr/importer/canonicalcsv/file/inexistent';
         return 0;
@@ -36,24 +32,10 @@ sub validate
 }
 
 
-sub set_file
-{
-    my $self = shift;
-    $self->{file} = shift;
-}
-
-
-sub file
-{
-    my $self = shift;
-    return $self->{file} || $self->{target};
-}
-
-
 sub get_data
 {
     my $self = shift;
-    my $file = $self->file();
+    my $file = $self->target();
     my @res  = ();
     
     open FP, "<$file" or die "Cannot read-open $file. Reason: $!";
@@ -100,14 +82,6 @@ sub rates
     };
 
     return $self->{rates};
-}
-
-
-sub provider
-{
-    my $self  = shift;
-    my @rates = values ( %{$self->{rates}} );
-    return $rates[0]->{provider}; 
 }
 
 

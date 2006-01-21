@@ -54,7 +54,7 @@ sub validate
     };
     
     $self->path() or do {
-        die "asterisk/lcr/locale/id/no_path";
+        die "asterisk/lcr/locale/id/no_path : $id";
     	return 0;
     };
     

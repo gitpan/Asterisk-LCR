@@ -2,7 +2,7 @@ package Asterisk::LCR;
 use warnings;
 use strict;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 1;
 
@@ -37,14 +37,10 @@ Once Asterisk::LCR is installed, you need to write a configuration file.
   
   [import:voipjet]
   package  = Asterisk::LCR::Importer::VoIPJet
-  uri      = http://www.voipjet.com/rates.csv
-  target   = voipjet.txt
   dial     = us IAX2/login@voipjet/REPLACEME
   
   [import:nufone]
   package  = Asterisk::LCR::Importer::NuFone
-  uri      = http://www.nufone.net/rates.csv
-  target   = nufone.txt
   dial     = us IAX2/login@NuFone/REPLACEME
 
 Let's examine the few sections of this configuration file:
@@ -122,7 +118,6 @@ Import module for VoIPJet.
 
   [import:voipjet]
   package  = Asterisk::LCR::Importer::VoIPJet
-  target   = voipjet.txt
   dial     = us IAX2/login@voipjet/REPLACEME
 
 Note the 'dial' parameter which is a dial template. In this example, 'us'
@@ -133,47 +128,22 @@ automagically replaced with the right "stuff" when the dialplan is generated.
 This dial template assumes that voipjet's peer definition is placed under
 [voipjet] in iax.conf.
 
+Supported providers:
 
-=head3 import - Asterisk::LCR::Import::NuFone
+=over
 
-Import module for NuFone. (Unfortunately, NuFone no longer has international
-destinations on its price list).
+=item Asterisk::LCR::Importer::NuFone
 
-  [import:nufone]
-  package  = Asterisk::LCR::Importer::NuFone
-  target   = nufone.txt
-  dial     = us IAX2/login@NuFone/REPLACEME
+=item Asterisk::LCR::Importer::PlainVoIP
 
-This dial template assumes that nufone's peer definition is placed under
-[NuFone] in iax.conf.
+=item Asterisk::LCR::Importer::RichMedium
 
+=item Asterisk::LCR::Importer::VoIPJet
 
-=head3 import - Asterisk::LCR::Import::PlainVoip
+=back
 
-Import module for PlainVoip.
-
-  [import:plainvoip]
-  package  = Asterisk::LCR::Importer::PlainVoip
-  target   = plainvoip.txt
-  dial     = us IAX2/login@PlainVoip/REPLACEME
-
-This dial template assumes that plainvoip's peer definition is placed under
-[PlainVoip] in iax.conf.
-
-
-=head3 import - Asterisk::LCR::Import::CanonicalCSV
-
-Any CSV file which uses a specific .CSV format can be used by Asterisk::LCR. In
-fact, VoIPJet and NuFone's importers simply convert their CSV format into a
-standardized, canonical format. The format is as follows:
-
-  $] cat some_other_provider.txt
-  prefix,label,provider,currency,rate,connection_fee,first_increment,increment
-  262,Reunion Island,Ykoz,EUR,0.035,0,1,1
-  262692,Reunion Island Mobile,Ykoz,EUR,0.15,0,1,1
-
-Any provider providing this CSV format can instantly be used with
-Asterisk::LCR. Encourage yours to provide rates in this format today!
+Providers! Send a mail to jhiver@ykoz.net to arrange for your rates to be
+readily importable into Asterisk::LCR. 
 
 
 =head1 USAGE
