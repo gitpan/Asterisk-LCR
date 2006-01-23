@@ -13,19 +13,34 @@ sub new
 }
 
 
+# does global => local => global ($prefix) conversion
+sub normalize
+{
+    my $self = shift;
+    my $prefix = shift;
+    return $self->local_to_global ($self->global_to_local ($prefix));
+}
+
+
 sub global_to_local
 {
     my $self = shift;
     my $num  = shift;
-    my $map  = $self->{global_to_local};
-    foreach my $prefix ( sort { length ($b) <=> length ($a) } keys %{$map} )
-    {
-        my $val  = $map->{$prefix};
-        $num =~ s/^_$prefix/_$val/          and return ($prefix =~ /^\d*$/) ? $num : $self->global_to_local ($num);
-        $num =~ s/^$prefix/$map->{$prefix}/ and return ($prefix =~ /^\d*$/) ? $num : $self->global_to_local ($num);
-    }
-
-    return $num;
+    
+    $self->{global_to_local_cache}->{$num} ||= do {
+        my $map  = $self->{global_to_local};
+	
+        foreach my $prefix ( sort { length ($b) <=> length ($a) } keys %{$map} )
+        {
+            my $val  = $map->{$prefix};
+            $num =~ s/^_$prefix/_$val/          and return ($prefix =~ /^\d*$/) ? $num : $self->global_to_local ($num);
+            $num =~ s/^$prefix/$map->{$prefix}/ and return ($prefix =~ /^\d*$/) ? $num : $self->global_to_local ($num);
+        }
+	
+	$num;
+    };
+    
+    return $self->{global_to_local_cache}->{$num};
 }
 
 
@@ -33,15 +48,21 @@ sub local_to_global
 {
     my $self = shift;
     my $num  = shift;
-    my $map  = $self->{local_to_global};
-    foreach my $prefix ( sort { length ($b) <=> length ($a) } keys %{$map} )
-    {
-        my $val  = $map->{$prefix};
-        $num =~ s/^_$prefix/_$val/          and return ($prefix =~ /^\d*$/) ? $num : $self->local_to_global ($num);
-        $num =~ s/^$prefix/$map->{$prefix}/ and return ($prefix =~ /^\d*$/) ? $num : $self->local_to_global ($num);
-    }
+    
+    $self->{local_to_global_cache}->{$num} ||= do {
+	my $map  = $self->{local_to_global};
 
-    return $num;
+        foreach my $prefix ( sort { length ($b) <=> length ($a) } keys %{$map} )
+        {
+            my $val  = $map->{$prefix};
+            $num =~ s/^_$prefix/_$val/          and return ($prefix =~ /^\d*$/) ? $num : $self->local_to_global ($num);
+            $num =~ s/^$prefix/$map->{$prefix}/ and return ($prefix =~ /^\d*$/) ? $num : $self->local_to_global ($num);
+        }
+
+        $num;
+    };
+    
+    return $self->{local_to_global_cache}->{$num};
 }
 
 

@@ -1,3 +1,11 @@
+- 0.07 (2006-01-24)
+  - Done lots of refactoring on the ./bin scripts
+  - Wrote an abstract persistence storage database layer
+  - Wrote Asterisk::LCR::Importer::DiskStatic (slow)
+  - Wrote Asterisk::LCR::Importer::DiskBlock (faster but non granular)
+  - Added RichMedium importer
+  - Updated documentation
+
 - 0.06 (2006-01-21)
   - Re-wrote and cleaned up CSV import scripts
   - Fixed target() method

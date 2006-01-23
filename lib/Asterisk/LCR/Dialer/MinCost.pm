@@ -27,38 +27,3 @@ sub _process
 
 
 1;
-
-__END__
-         $after  = '' unless (defined $after);
-         $before = '' unless (defined $after);
-
-         $dial_string = "$before$stuff\${EXTEN:$exten_remove}$after";
-
-unless ($before)
-{
-use Data::Dumper;
-warn Dumper (\%fake_agi_args);
-warn Dumper ($rate);
-warn <<EOF;
-$orig_dial;
-rate_dial_template : $rate_dial_template
-dial               : $dial_string
-str_before         : $str_before
-str_after          : $str_after
-before             : $before
-stuff              : $stuff
-exten              : \${EXTEN:$exten_remove}
-after              : $after
-EOF
-print "_$prefix" . "X. => s,$count,Dial($dial_string)\n";
-exit;
-}
-
-         push @out, "_$prefix" . "X. => s,$count,Dial($dial_string)";
-         $count++;
-
-
-1;
-
-
-__END__

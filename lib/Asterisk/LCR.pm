@@ -2,7 +2,7 @@ package Asterisk::LCR;
 use warnings;
 use strict;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 1;
 
@@ -27,14 +27,26 @@ Once Asterisk::LCR is installed, you need to write a configuration file.
 
   $] cat /etc/asterisk-lcr.cfg
   
+  # Asterisk::LCR supports pluggable storage backend, so it's possible
+  # to write MySQL or other storage backend mechanisms one day.
+  [storage]
+  package  = Asterisk::LCR::Storage::DiskBlob.pm
+  
+  # Asterisk::LCR supports pluggable rates comparing backend, so you
+  # could write one which simulates costs against actual traffic for
+  # example.
   [comparer]
   package  = Asterisk::LCR::Comparer::XERAND
   currency = eur
   
+  # Asterisk::LCR supports pluggable dialing strategies. Currently there is
+  # 'MinCost' which tries the absolutely cheapest route, and 'MinTime' which
+  # tries the $n cheapest providers simultaneously.
   [dialer]
   package  = Asterisk::LCR::Dialer::MinCost
   locale   = fr 
   
+  # Finally, you need to define which providers rates you want to import. 
   [import:voipjet]
   package  = Asterisk::LCR::Importer::VoIPJet
   dial     = us IAX2/login@voipjet/REPLACEME

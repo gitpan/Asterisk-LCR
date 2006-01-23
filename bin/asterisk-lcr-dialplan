@@ -41,7 +41,6 @@ sub get_variable
 
 
 package main;
-use FreezeThaw qw(freeze thaw cmpStr safeFreeze cmpStrHard);
 use Asterisk::LCR::Importer::CanonicalCSV;
 use Asterisk::LCR::Rate;
 use Config::Mini;
@@ -52,39 +51,30 @@ $SIG{__WARN__} = sub { $_[0] !~ /Can't locate AGI\/Fake\.pm/ and warn @_ };
 @ARGV || die "Usage: $0 <config_file>";
 Config::Mini::parse_file (@ARGV);
 
-my $SORT = Config::Mini::instantiate ("comparer") || Asterisk::LCR::Comparer::Dummy->new();
-our @IMPORTERS =  map { Asterisk::LCR::Importer::CanonicalCSV->new ( %{$_} ) } Config::Mini::select ('^import:');
+our $LOCALE    = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
+our $STORE     = Config::Mini::instantiate ("storage")  || die "no storage configured"; 
+our @PROVIDERS = map { Asterisk::LCR::Importer::CanonicalCSV->new ( %{$_} ) }
+                 Config::Mini::select ('^import:');
 
-$| = 1;
+our %prefixes = ();
 
-my %PREFIXES = ();
-my %fake_agi_args = ();
-
-my $locale = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
-foreach my $imp ( @IMPORTERS )
+foreach my $prov ( @PROVIDERS )
 {
-    print STDERR "Importing rates: " . $imp->target();
-    print STDERR "\n";
-    foreach my $prfx (keys %{$imp->rates()})
+    foreach my $prfx ( $prov->prefixes() )
     {
-        my $fix_prfx = $locale->local_to_global ($locale->global_to_local ($prfx));
-        $PREFIXES{$fix_prfx} = 1;
+        $prefixes{$prfx} = 1;
     }
-
-    my $prv = $imp->provider();
-    my $key = 'ASTERISK_LCR_TMPL_' . uc ($prv);
-    $fake_agi_args{$key} = [ $imp->{dial} ];
 }
 
-#foreach my $imp ( @IMPORTERS )
-#{
-#    my $new_rates = $imp->rates();
-#    for my $prefix ( keys %{$new_rates} ) { $PREFIXES{$prefix} = 1 }
-#    
-#    my $prv = $imp->provider();
-#    my $key = 'ASTERISK_LCR_TMPL_' . uc ($prv);
-#    $fake_agi_args{$key} = [ $imp->{dial} ];
-#}
+my %fake_agi_args = ();
+for my $prov (@PROVIDERS)
+{
+    print STDERR "Importing rates: " . $prov->target();
+    print STDERR "\n";
+
+    my $key = 'ASTERISK_LCR_TMPL_' . uc ($prov->provider());
+    $fake_agi_args{$key} = [ $prov->{dial} ];
+}
 
 $Config::Mini::CONF{"agi"} = {
     package => [ "AGI::Fake" ],
@@ -94,22 +84,26 @@ $Config::Mini::CONF{"agi"} = {
 $Config::Mini::CONF{"dialer"}->{"lcr"} ||= [ "lcr_db" ];
 $Config::Mini::CONF{"dialer"}->{"agi"} ||= [ Config::Mini::instantiate ("agi") ];
 
+$| = 1;
 
 my @out;
 my $dialer = Config::Mini::instantiate ("dialer") || die "dialer object not defined";
-foreach my $prefix (sort keys %PREFIXES)
-{
-     print STDERR "Generating dialplan for $prefix...\n";
-     my @dial_string  = @{$dialer->_process ($prefix)};
-     my $count  = 1;
-     foreach my $dial_string (@dial_string)
-     {
-         my $local_prefix = $dialer->locale() ? $dialer->locale()->global_to_local ($prefix) : $prefix;
-         push @out, "exten => _$local_prefix". "X.,$count,Dial($dial_string)";
-         $count++;
-     }
-}
 
+print STDERR "Generating dialplan";
+foreach my $prfx (sort keys %prefixes)
+{
+    print STDERR ".";
+    my $local_prfx = $LOCALE ? $LOCALE->global_to_local ($prfx) : $prfx;
+    
+    my @dial_string  = @{$dialer->_process ($prfx)};
+    my $count  = 1;
+    foreach my $dial_string (@dial_string)
+    {
+        push @out, "exten => _$local_prfx". "X.,$count,Dial($dial_string)";
+        $count++;
+    }
+}
+print STDERR " done.\n";
 print join "\n", sort { _sort_line ($b, $a) } @out;
 print "\n";
 

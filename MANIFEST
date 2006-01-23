@@ -9,7 +9,6 @@ lib/Asterisk/LCR/Comparer/XERAND.pm
 lib/Asterisk/LCR/Dialer.pm
 lib/Asterisk/LCR/Dialer/MinCost.pm
 lib/Asterisk/LCR/Dialer/MinTime.pm
-lib/Asterisk/LCR/Dialer/MinTime.pm.good
 lib/Asterisk/LCR/Importer.pm
 lib/Asterisk/LCR/Importer/CanonicalCSV.pm
 lib/Asterisk/LCR/Importer/NuFone.pm
@@ -23,9 +22,12 @@ lib/Asterisk/LCR/Locale/fr.txt
 lib/Asterisk/LCR/Locale/us.txt
 lib/Asterisk/LCR/Object.pm
 lib/Asterisk/LCR/Rate.pm
+lib/Asterisk/LCR/Storage.pm
+lib/Asterisk/LCR/Storage/DiskBlob.pm
+lib/Asterisk/LCR/Storage/DiskStatic.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
-META.yml			Module meta-data (added by MakeMaker)
+META.yml
 README
 t/001_locale.t

@@ -1,8 +1,6 @@
 #!/usr/bin/perl
 use lib qw (. .. ./lib);
-use FreezeThaw qw(freeze thaw cmpStr safeFreeze cmpStrHard);
 use Asterisk::LCR::Importer::CanonicalCSV;
-use Asterisk::LCR::Comparer::Dummy;
 use Asterisk::LCR::Locale;
 use Config::Mini;
 use warnings;
@@ -11,110 +9,39 @@ use strict;
 @ARGV || die "Usage: $0 <config_file>";
 Config::Mini::parse_file (@ARGV);
 
-my $SORT = Config::Mini::instantiate ("comparer") || Asterisk::LCR::Comparer::Dummy->new();
-our @IMPORTERS =  map { Asterisk::LCR::Importer::CanonicalCSV->new ( %{$_} ) } Config::Mini::select ('^import:');
-
 $| = 1;
 
+our $LOCALE    = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
+our $STORE     = Config::Mini::instantiate ("storage")  || die "no storage configured"; 
+our @PROVIDERS = map { Asterisk::LCR::Importer::CanonicalCSV->new ( %{$_} ) }
+                 Config::Mini::select ('^import:');
 
-my %prefixes = ();
-my $locale   = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
-foreach my $imp ( @IMPORTERS )
+our %prefixes = ();
+
+foreach my $prov ( @PROVIDERS )
 {
-    print "Importing rates: " . $imp->target();
-    print "\n";
-    foreach my $prfx (keys %{$imp->rates()})
+    foreach my $prfx ( $prov->prefixes() )
     {
-        my $fix_prfx = $locale->local_to_global ($locale->global_to_local ($prfx));
-        $prefixes{$fix_prfx} = 1;
+        $prefixes{$prfx} = 1;
     }
 }
 
 
-my %importer_rates = ();
-my $rates  = {};
-
-print "Sorting rates";
-foreach my $prefix ( sort { length ($b) <=> length ($a) } keys %prefixes )
+print "Building LCR object tree";
+foreach my $prfx ( keys %prefixes )
 {
     my @rates = ();
     
-    foreach my $importer ( @IMPORTERS )
+    foreach my $prov ( @PROVIDERS )
     {
-        my $num = $prefix;
-        my $prefix_to_rate = $importer_rates{"$importer"} || do {
-            $importer_rates{"$importer"} = $importer->rates();
-            $importer_rates{"$importer"};
-        };
-        my $rate = undef;
-    
-      LOOP:    
-        while (length ($num) > 0)
-        {
-            $rate = $prefix_to_rate->{$num};
-            if ($rate)
-            {
-                push @rates, $rate;
-                last LOOP;
-            }
-            
-            chop ($num);
-        }
+        my $rate = $prov->search_rate ($prfx) || next;
+        push @rates, $rate;
     }
-
-    $rates->{$prefix} = [ sort { $SORT->sortme ($a, $b) } @rates ];
-}
-print "\n";
-
-
-_rm_rf ("lcr_db");
-print "Building LCR object tree";
-foreach my $prefix ( keys %{$rates} )
-{
-    @{$rates->{$prefix}} || next;
-
-    my $dir = join '/', split //, $prefix;
-    $dir    = "lcr_db/$dir";
-
-    _mkdir_p ($dir);
-    
-    open FP, ">$dir/index.obj" || die "Cannot write-open $dir/index.obj";
-    print FP freeze ( @{$rates->{$prefix}} );
-    close FP;
-
+    $STORE->register ($prfx, @rates);
     print ".";
 }
+$STORE->save();
 print " done.\n";
-
-
-sub _rm_rf
-{
-    my $file = shift;
-    -e $file or return;
-    -d $file and do {
-        opendir DD, $file;
-        my @subfiles = readdir (DD);
-        for (@subfiles)
-        {
-            /^\.\.?$/ and next;
-            _rm_rf ("$file/$_");
-        }
-        rmdir ($file);
-    };
-    -f $file and unlink $file;
-}
-
-
-sub _mkdir_p
-{
-    my $dir = shift || return;
-    return if (-d $dir);
-
-    my ($parent, $name) = $dir =~ /(.*)\/(.*)/;
-    _mkdir_p ($parent);
-
-    mkdir ($dir);
-}
 
 
 1;

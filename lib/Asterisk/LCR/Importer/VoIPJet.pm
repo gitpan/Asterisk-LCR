@@ -1,6 +1,5 @@
 package Asterisk::LCR::Importer::VoIPJet;
 use base qw /Asterisk::LCR::Importer/;
-use Asterisk::LCR::Rate;
 use warnings;
 use strict;
 

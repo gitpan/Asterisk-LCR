@@ -42,9 +42,12 @@ Options to be appended to the dialstring. Example:
 package Asterisk::LCR::Dialer;
 use base qw /Asterisk::LCR::Object/;
 use Asterisk::LCR::Locale;
-use FreezeThaw;
+use Config::Mini;
 use warnings;
 use strict;
+
+
+our $STORE = undef;
 
 
 =head2 $self->validate();
@@ -138,7 +141,7 @@ sub validate_agi
 {
     my $self = shift;
     
-    my $agi  = $self->agi() || $::AGI_FAKE || do {
+    my $agi  = $self->agi() || do {
         die 'asterisk/lcr/agi/dialer/agi/undefined';
         return 0;
     };
@@ -325,7 +328,6 @@ sub dial_string
 }
 
 
-
 =head2 $self->rates ($number);
 
 Returns an array of rates for $number, sorted cheapest first.
@@ -334,35 +336,8 @@ Returns an array of rates for $number, sorted cheapest first.
 sub rates
 {
     my $self  = shift;
-    my $num   = shift;
-
-    my $db    = $self->lcr();
-    my $limit = $self->limit() || 10000;
-    
-    my $found = 0;
-    my @res   = ();
-    
-    while (not $found and length ($num))
-    {
-        my $dir = join '/', split //, $num;
-        $dir    = "$db/$dir";
-        unless (-e "$dir/index.obj")
-        {
-            chop ($num);
-            next;
-        }
- 
-        $found = 1;
-
-        open FP, "<$dir/index.obj" or die "Cannot read-open $dir/index.obj";
-        my $data = join '', <FP>;
-        close FP;
-
-        @res = FreezeThaw::thaw ($data);
-    }
-
-    while (@res > $limit) { pop @res };
-    return @res;
+    $STORE  ||= Config::Mini::instantiate ('storage') || die 'no storage backend configured...';
+    return $STORE->list (@_);
 }
 
 
