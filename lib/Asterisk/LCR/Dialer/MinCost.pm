@@ -10,7 +10,7 @@ sub _process
     my $prefix = shift || return;
     my @rates  = $self->rates ($prefix);
     @rates || return [];
-
+        
     my $local_prefix = $self->locale() ? $self->locale()->global_to_local ($prefix) : $prefix;
     my $exten_remove = length ($local_prefix);
     

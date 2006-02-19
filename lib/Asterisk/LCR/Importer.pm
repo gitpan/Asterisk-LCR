@@ -46,7 +46,7 @@ In your config file:
 package Asterisk::LCR::Importer;
 use base qw /Asterisk::LCR::Object/;
 use Asterisk::LCR::Locale;
-use Asterisk::LCR::Rate;
+use Asterisk::LCR::Route;
 use LWP::Simple;
 use warnings;
 use strict;
@@ -90,7 +90,7 @@ sub get_data
     my $data = LWP::Simple::get ($self->uri());
     $data || die "Could not retrieve " . $self->uri();
     
-    my @data = split /\r\n|\n|\r/, $data;
+    my @data = split /\n\r|\r\n|\n|\r/, $data;
     return \@data;
 }
 
@@ -197,6 +197,7 @@ sub provider
         my $uri = $self->uri();
         $uri =~ s/^.*\:\/\/(www\.)?//;
         $uri =~ s/\..*//;
+        $uri =~ s/.*\///;
         $uri;
     };
     
@@ -356,7 +357,7 @@ sub rates
         my $rec = [ split /\s*$comma\s*/, $_ ];
         my $pfx = $self->prefix ($rec);
         $pfx = $loc->normalize ($pfx) if ($loc);
-        $res->{$pfx} = Asterisk::LCR::Rate->new (
+        $res->{$pfx} = Asterisk::LCR::Route->new (
             prefix          => $pfx,
             label           => $self->label ($rec),
             provider        => $self->provider ($rec),

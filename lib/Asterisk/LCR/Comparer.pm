@@ -1,6 +1,6 @@
 =head1 NAME
 
-Asterisk::LCR::Comparer - Generic Rate Comparer for Asterisk::LCR
+Asterisk::LCR::Comparer - Generic Route Comparer for Asterisk::LCR
 
 
 =head1 SUMMARY
@@ -20,8 +20,25 @@ none.
 =cut
 package Asterisk::LCR::Comparer;
 use base qw /Asterisk::LCR::Object/;
+use Config::Mini;
 use warnings;
 use strict;
+
+
+=head2 $self->normalize ($rate);
+
+Turns $rate into a 1/1, base currency rate.
+
+=cut
+sub normalize
+{
+    my $self = shift;
+    my $rate = shift;
+    $rate->{first_increment} = 1;
+    $rate->{connection_fee}  = 0;
+    $rate->{increment}       = 1;
+    $rate->{currency}        = Config::Mini::get ('comparer')->currency();
+}
 
 
 =head2 $self->sortme ($object1, $object2);

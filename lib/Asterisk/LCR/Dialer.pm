@@ -17,14 +17,6 @@ in the $self->process() method, which in this package is undefined.
 
 =head1 ATTRIBUTES
 
-=head2 lcr (scalar)
-
-Location (directory) of the lcr object tree.
-
-=head2 agi (Asterisk::AGI object)
-
-An AGI object which can be used to grab some parameters from.
-
 =head2 limit (numerical scalar)
 
 Limit dialing strategies to 'limit' cheapest routes.
@@ -50,61 +42,6 @@ use strict;
 our $STORE = undef;
 
 
-=head2 $self->validate();
-
-Returns TRUE if this object validates, FALSE otherwise.
-
-=cut
-sub validate
-{
-    my $self = shift;
-    return $self->validate_lcr() &
-           $self->validate_agi();
-}
-
-
-=head2 $self->validate_lcr();
-
-Returns TRUE if there is a 'lcr' attribute and it's an existing
-directory, FALSE otherwise.
-
-=cut
-sub validate_lcr
-{
-    my $self = shift;
-    my $lcr  = $self->lcr() || do {
-        die 'asterisk/lcr/lcr/dialer/lcr/undefined';
-        return 0;
-    };
-
-    return 1;
-}
-
-
-=head2 $self->lcr();
-
-Returns the 'lcr' attribute.
-
-=cut
-sub lcr
-{
-    my $self = shift;
-    return $self->{lcr};
-}
-
-
-=head2 $self->set_lcr ($lcr);
-
-Sets the 'lcr' attribute to $lcr.
-
-=cut
-sub set_lcr
-{
-    my $self = shift;
-    $self->{lcr} = shift;
-}
-
-
 =head2 $self->locale();
 
 Returns the 'locale' attribute.
@@ -127,50 +64,6 @@ sub set_locale
 {
     my $self = shift;
     $self->{locale} = shift;
-}
-
-
-
-=head2 $self->validate_agi();
-
-Returns TRUE if the 'agi' attribute exists,
-FALSE otherwise.
-
-=cut
-sub validate_agi
-{
-    my $self = shift;
-    
-    my $agi  = $self->agi() || do {
-        die 'asterisk/lcr/agi/dialer/agi/undefined';
-        return 0;
-    };
-    
-    return 1;
-}
-
-
-=head2 $self->agi();
-
-Returns the 'agi' attribute.
-
-=cut
-sub agi
-{
-    my $self = shift;
-    return $self->{agi};
-}
-
-
-=head2 $self->set_agi ($lcr);
-
-Sets the 'agi' attribute to $agi.
-
-=cut
-sub set_agi
-{
-    my $self = shift;
-    $self->{agi} = shift;
 }
 
 
@@ -269,7 +162,7 @@ sub dial
     my $str  = shift || return;
     $str .= $self->opts();
 
-    my $agi  = $self->agi();
+    my $agi  = $self->{agi} || die '$self->{agi} is not set';
     return $agi->exec ("DIAL $str");
 }
 
@@ -308,11 +201,10 @@ sub dial_string
     my $self = shift;
     my $num  = shift || return;
     my $rate = shift || return;
-    my $agi  = $self->agi();
     
-    my $provider = $rate->{provider};
-    my $astvar   = 'ASTERISK_LCR_TMPL_' . uc ($provider);
-    my $value    = $agi->get_variable ($astvar) || return;
+    my $provider   = $rate->provider();
+    my $provider_o = Config::Mini::instantiate ("import:$provider");
+    my $value      = $provider_o->{dial};
     
     my ($locale, $dialtmpl) = ($value =~ /\s/) ? ( split /\s+/, $value, 2 ) : (undef, $value);
     for ($locale)

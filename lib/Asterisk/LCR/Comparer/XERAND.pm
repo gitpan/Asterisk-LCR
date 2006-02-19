@@ -35,6 +35,34 @@ our %CURRENCY_RATES = ();
 our $XE = Finance::Currency::Convert::XE->new();
 our $SUITE = undef;
 
+
+sub normalize
+{
+    my $self = shift;
+    my $rate = shift;
+    
+    # fetch the rate itself
+    my $price = $rate->rate();
+    my $curr  = $rate->currency();
+    my $cfee  = $rate->connection_fee();
+    my $finc  = $rate->first_increment();
+    my $ninc  = $rate->increment();
+
+    # overwrite the attributes with corrected rate
+    $SUITE ||= [ map { _random_normalized ($self->average(), $self->variance()) } 1..10000 ];
+    $price = _simulate_cost_suite ($SUITE, $price, $cfee, $finc, $ninc);
+    my $totsecs = 0;
+    for (@{$SUITE}) { $totsecs += $_ };
+    $price = int (10000 * 60 * ($price / $totsecs)) / 10000;
+    
+    $rate->{rate}            = $self->_convert ($price, $curr);
+    $rate->{currency}        = $self->currency();
+    $rate->{increment}       = 1;
+    $rate->{first_increment} = 1;
+    $rate->{connection_fee}  = 0;
+}
+
+
 sub currency
 {
     my $self = shift;
@@ -70,22 +98,13 @@ sub _fetch_rate
 }
 
 
-=head2 $self->sortme ($object1, $object2);
-
-Simply compares $object1->rate() with $object2->rate().
-
-Doesn't care about time increments or even rate currency(!).
-
-Pretty dumb... it would be nice to have better rate comparers
-but it's a start and can be overriden...
-
-=cut
 sub sortme
 {
     my $self = shift;
     my $arg1 = shift;
     my $arg2 = shift;
-
+    $arg1->{_is_normal} && $arg2->{_is_normal} && return $arg1->rate() <=> $arg2->rate();
+    
     my $rate1 = $arg1->rate();
     my $rate2 = $arg2->rate();
 
@@ -167,10 +186,6 @@ sub _simulate_cost_suite
             $tot_len += $length;
         }
         
-        my $ppm = (int (600000 * $cost / $tot_len) / 10000);
-#         print "$rate ($conn+$first_inc/$next_inc) -> $ppm (1/1)\n";
-        print '.';
-# print "$rate ($conn+$first_inc/$next_inc) -> $ppm (1/1)\n";
         $cost;
     };
     

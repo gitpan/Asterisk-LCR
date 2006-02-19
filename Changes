@@ -1,3 +1,9 @@
+- 0.08
+  - Added search_rates method to generic storage module
+  - Tweaked the 'bin' script so that 'locale' is optional in the Dialer section
+  - Added countries list in /contrib directory
+  - Added ITSP-centric features such as rates generation & management
+
 - 0.07 (2006-01-24)
   - Done lots of refactoring on the ./bin scripts
   - Wrote an abstract persistence storage database layer

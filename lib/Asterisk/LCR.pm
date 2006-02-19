@@ -2,7 +2,7 @@ package Asterisk::LCR;
 use warnings;
 use strict;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 1;
 
@@ -19,6 +19,9 @@ Asterisk::LCR is an open-source, Perl-based collection of tools to help you
 manage efficiently multiple VoIP providers with your Asterisk installation.
 
 It attempts to be sort of clean, simple and well documented.
+
+Speaking of documentation, it's probably best if you go read
+http://ykoz.net/intl/lcr/ since I maintain it there.
 
 
 =head1 CONFIGURATION

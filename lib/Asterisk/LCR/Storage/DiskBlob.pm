@@ -1,5 +1,5 @@
 package Asterisk::LCR::Storage::DiskBlob;
-use base qw /Asterisk::LCR::Object/;
+use base qw /Asterisk::LCR::Storage/;
 use FreezeThaw;
 use warnings;
 use strict;
@@ -39,14 +39,14 @@ sub register
 {
     my $self   = shift;
     my $prefix = shift;
-        
+    
     my %rates  = ();
     for ($self->list ($prefix)) { $rates{$_->provider()} = $_ }
     for (@_)                    { $rates{$_->provider()} = $_ }
-
+    
     $SORT ||= Config::Mini::instantiate ('comparer');    
     my @rates  = sort { $SORT->sortme ($a, $b) } values %rates;
-    
+        
     $self->_write_to_memory ($prefix, @rates);
 }
 
@@ -57,7 +57,10 @@ sub list
     my $prefix = shift;
     my $limit  = shift || 10000;
     my $res    = $self->{map}->{$prefix};
-    return $res ? splice @{$res},0,$limit : ();
+    return unless $res;
+    
+    my @res = @{$res};
+    return splice @res,0,$limit;
 }
 
 

@@ -1,5 +1,5 @@
 package Asterisk::LCR::Storage::DiskStatic;
-use base qw /Asterisk::LCR::Object/;
+use base qw /Asterisk::LCR::Storage/;
 use FreezeThaw;
 use warnings;
 use strict;

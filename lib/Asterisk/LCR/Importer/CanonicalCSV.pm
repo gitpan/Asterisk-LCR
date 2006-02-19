@@ -12,7 +12,7 @@ Asterisk::LCR::Importer::CanonicalCSV
 =cut
 package Asterisk::LCR::Importer::CanonicalCSV;
 use base qw /Asterisk::LCR::Importer/;
-use Asterisk::LCR::Rate;
+use Asterisk::LCR::Route;
 use Asterisk::LCR::Locale;
 use warnings;
 use strict;
@@ -67,7 +67,7 @@ sub rates
        {
            my ($prefix, $label, $provider, $currency, $rate, $connection_fee, $first_increment, $increment) = split /\s*,\s*/, $_;
            $prefix = $locale->local_to_global ($prefix);   
-           $res->{$prefix} = Asterisk::LCR::Rate->new (
+           $res->{$prefix} = Asterisk::LCR::Route->new (
   	    connection_fee  => $connection_fee,
 	    first_increment => $first_increment,
 	    increment       => $increment,

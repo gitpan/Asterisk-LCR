@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 =head1 NAME
 
-Asterisk::LCR::Rate - Rate objects for Asterisk::LCR
+Asterisk::LCR::Route - Route objects for Asterisk::LCR
 
 
 =head1 SYNOPSIS
 
-  use Asterisk::LCR::Rate;
-  my $rate =  Asterisk::LCR::Rate->new (
+  use Asterisk::LCR::Route;
+  my $rate =  Asterisk::LCR::Route->new (
       provider        => 'someprovider',
       connection_fee  => 0,
       first_increment => 30,
@@ -70,7 +70,7 @@ Destination of this rate. This is a string, not an object.
 =head1 METHODS
 
 =cut
-package Asterisk::LCR::Rate;
+package Asterisk::LCR::Route;
 use base qw /Asterisk::LCR::Object/;
 use warnings;
 use strict;
@@ -265,14 +265,23 @@ returns 1 if the object validates, 0 otherwise.
 sub validate
 {
     my $self = shift;
-    return $self->validate_connection_fee()  &
-           $self->validate_first_increment() &
-	   $self->validate_increment()       &
-	   $self->validate_currency()        &
-	   $self->validate_rate()            &
-	   $self->validate_provider()        &
-	   $self->validate_label()           &
-	   $self->validate_prefix();
+    my $res  = eval {
+        $self->validate_connection_fee()  &
+        $self->validate_first_increment() &
+        $self->validate_increment()       &
+	$self->validate_currency()        &
+	$self->validate_rate()            &
+	$self->validate_provider()        &
+	$self->validate_label()           &
+	$self->validate_prefix()
+    };
+    $@ and do {
+        print $@ . "\n\n";
+        use Data::Dumper;
+        die Dumper ($self);
+    };
+    
+    return $res;
 }
 
 
@@ -397,7 +406,7 @@ sub validate_increment
     };
     
     is_number ($val) or do { 
-        die 'asterisk/lcr/rate/first_increment/not_a_number';
+        die 'asterisk/lcr/rate/increment/not_a_number';
 	return 0;
     };
 

@@ -3,105 +3,100 @@ use lib qw (. .. ./lib);
 use warnings;
 use strict;
 
-
-sub _process
-{
-    my $self  = shift;
-    my $num   = shift || return;
-    my @rates = $self->rates ($num);
-
-    my ($str, $res);
-    foreach my $rate (@rates)
-    {
-        $str = $self->dial_string ($num, $rate) || next;
-        $res = $self->dial ($str);
-        $res =~ /CHANUNAVAIL|CONGESTION/ ? next : last;
-    }
-
-    $res ||= 'CHANUNAVAIL';
-    return $res;
-}
-
-
-package AGI::Fake;
-
-sub new
-{
-    my $class = shift;
-    return bless { @_ }, $class;
-}
-
-
-sub get_variable
-{
-    my $self = shift;
-    my $var  = shift;
-    return $self->{$var};
-}
-
-
-package main;
-use Asterisk::LCR::Importer::CanonicalCSV;
-use Asterisk::LCR::Rate;
+use Asterisk::LCR::Storage::MyRoutes;
+use Asterisk::LCR::Route;
 use Config::Mini;
 
 
 $SIG{__WARN__} = sub { $_[0] !~ /Can't locate AGI\/Fake\.pm/ and warn @_ };
 
 @ARGV || die "Usage: $0 <config_file>";
-Config::Mini::parse_file (@ARGV);
+Config::Mini::parse_file (shift);
 
-our $LOCALE    = Asterisk::LCR::Locale->new (Config::Mini::get ("dialer", "locale"));
-our $STORE     = Config::Mini::instantiate ("storage")  || die "no storage configured"; 
-our @PROVIDERS = map { Asterisk::LCR::Importer::CanonicalCSV->new ( %{$_} ) }
-                 Config::Mini::select ('^import:');
+$Asterisk::LCR::Storage::MyRoutes::FILE = shift || "__NO_FILE__";
 
-our %prefixes = ();
+our $STORE  = Config::Mini::instantiate ("storage") || die "no storage configured";
+our $DIALER = Config::Mini::instantiate ("dialer")  || die "no dialer configured";
+our $LOCALE = $DIALER->locale();
 
-foreach my $prov ( @PROVIDERS )
+
+# ----------------------------------------------------------------------------
+print STDERR "Reading all possible prefixes from all_rates.csv\n";
+our %Prefixes = ();
+
+open FP, "<all_rates.csv" or die "Cannot open-read all_rates.csv";
+my $head = <FP>;
+while (<FP>)
 {
-    foreach my $prfx ( $prov->prefixes() )
-    {
-        $prefixes{$prfx} = 1;
-    }
+    chomp();
+    s/,.*$//;
+    $Prefixes{$_} = 1;
+}
+close FP;
+
+
+# ----------------------------------------------------------------------------
+print STDERR "Checking if $Asterisk::LCR::Storage::MyRoutes::FILE exists... ";
+our $MYRATES_STORE = undef;
+if ($Asterisk::LCR::Storage::MyRoutes::FILE and -e $Asterisk::LCR::Storage::MyRoutes::FILE)
+{
+    print STDERR "Yes! Loading fake storage object\n";
+    $MYRATES_STORE = Asterisk::LCR::Storage::MyRoutes->new();
+}
+else
+{
+    print STDERR "Nope. No prefix filtering will be performed.\n";
 }
 
-my %fake_agi_args = ();
-for my $prov (@PROVIDERS)
-{
-    print STDERR "Importing rates: " . $prov->target();
-    print STDERR "\n";
 
-    my $key = 'ASTERISK_LCR_TMPL_' . uc ($prov->provider());
-    $fake_agi_args{$key} = [ $prov->{dial} ];
-}
-
-$Config::Mini::CONF{"agi"} = {
-    package => [ "AGI::Fake" ],
-    %fake_agi_args,
-};
-
-$Config::Mini::CONF{"dialer"}->{"lcr"} ||= [ "lcr_db" ];
-$Config::Mini::CONF{"dialer"}->{"agi"} ||= [ Config::Mini::instantiate ("agi") ];
-
-$| = 1;
-
-my @out;
-my $dialer = Config::Mini::instantiate ("dialer") || die "dialer object not defined";
-
+# ----------------------------------------------------------------------------
 print STDERR "Generating dialplan";
-foreach my $prfx (sort keys %prefixes)
+our @out = ();
+my $cnt = 0;
+foreach my $pfx (sort keys %Prefixes)
 {
-    print STDERR ".";
-    my $local_prfx = $LOCALE ? $LOCALE->global_to_local ($prfx) : $prfx;
+    $cnt ++;
+    print STDERR "." unless ($cnt % 100);
+    my $local_pfx = $LOCALE ? $LOCALE->global_to_local ($pfx) : $pfx;
+
+    my $count = 1;
     
-    my @dial_string  = @{$dialer->_process ($prfx)};
-    my $count  = 1;
-    foreach my $dial_string (@dial_string)
+    if ($MYRATES_STORE)
     {
-        push @out, "exten => _$local_prfx". "X.,$count,Dial($dial_string)";
-        $count++;
+        # Step 1: Check that this prefix is supported by $MYRATES_STORE
+        my ($own_rate) = $MYRATES_STORE->search_rates ($pfx);
+        $own_rate or next;
+        
+        # Step 2: Grab the rate from our LCR store
+        my @rates = $STORE->search_rates ($pfx, $DIALER->limit());
+
+        # Step 3: Remove all rates which might be decidedly too
+        #         expensive compared with our own rates.
+        #         Otherwise, proceed to LCR dialing.
+        @rates = map { $own_rate->rate() > $_->rate() ? $_ : () } @rates;
+        
+        my @dial_string  = @{$DIALER->_process ($pfx)};   
+        while (scalar @dial_string and scalar @rates)
+        {
+            my $dial_string = shift (@dial_string);
+            # shift (@rates);
+            push @out, "exten => _$local_pfx" . "X.,$count,Dial($dial_string)";
+            $count++;
+        }
     }
+    
+    else
+    {
+        my @dial_string  = @{$DIALER->_process ($pfx)};   
+        while (scalar @dial_string)
+        {
+            my $dial_string = shift (@dial_string);
+            push @out, "exten => _$local_pfx" . "X.,$count,Dial($dial_string)";
+            $count++;
+        }
+    }
+    
+    push @out, "exten => _$local_pfx" . "X.,$count,Congestion()";
 }
 print STDERR " done.\n";
 print join "\n", sort { _sort_line ($b, $a) } @out;

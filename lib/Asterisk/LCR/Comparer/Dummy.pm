@@ -1,11 +1,11 @@
 =head1 NAME
 
-Asterisk::LCR::Comparer::Dummy - Dummy  Rate Comparer for Asterisk::LCR
+Asterisk::LCR::Comparer::Dummy - Dummy Route Comparer for Asterisk::LCR
 
 
 =head1 SUMMARY
 
-This is a very dumb comparer for Asterisk::LCR::Rate object.
+This is a very dumb comparer for Asterisk::LCR::Route object.
 
 
 =head1 ATTRIBUTES

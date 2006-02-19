@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'		=> 'Asterisk::LCR',
     'VERSION_FROM'	=> 'lib/Asterisk/LCR.pm', # finds $VERSION
-    'EXE_FILES'         => [ qw (bin/asterisk-lcr-build bin/asterisk-lcr-dialplan bin/asterisk-lcr-import) ],
+    'EXE_FILES'         => [ qw (bin/asterisk-lcr-build bin/asterisk-lcr-import bin/asterisk-lcr-dialplan bin/asterisk-lcr-myroutes) ],
     'PREREQ_PM'		=> {
 	'Config::Mini'  => '0.01',
         'FreezeThaw'    => '0.43',

@@ -1,17 +1,26 @@
 package Asterisk::LCR::Storage;
-use qw /Asterisk::LCR::Object/;
+use base qw /Asterisk::LCR::Object/;
 use warnings;
 use strict;
 
-=head2 $storage->set ($prefix, $rate)
-
-Sets a rate object for $prefix. If for this prefix, a rate was present for the
-same provider, it should override it.
-
-=cut
-sub set
+sub search_rates
 {
     my $self   = shift;
     my $prefix = shift;
-    $self->_set ($prefix, $_) for (@_);
+    my $limit  = shift;
+
+    defined $prefix or return;
+    $prefix ne ''   or return;
+
+    my @res = $self->list ($prefix, $limit);
+    return @res if (@res);
+
+    chop ($prefix);
+    return $self->search_rates ($prefix, $limit);
 }
+
+
+1;
+
+
+__END__
